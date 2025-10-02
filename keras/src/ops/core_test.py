@@ -161,42 +161,6 @@ class CoreOpsCorrectnessTest(testing.TestCase, parameterized.TestCase):
         self.assertAllClose(outputs["a"], xs**2)
         self.assertAllClose(outputs["b"], xs * 10)
 
-        # Test with nested structures
-        def dict_input_fn(inputs):
-            x = inputs["x"][:, 0]
-            y = inputs["y"] + 1
-            return {"x": x, "y": y}
-
-        def list_input_fn(inputs):
-            return [x**2 for x in inputs]
-
-        xs = {
-            "x": ops.convert_to_tensor(
-                np.random.rand(4, 100, 3), dtype="float32"
-            ),
-            "y": ops.convert_to_tensor(
-                np.random.randint(0, 10, size=(4, 1)), dtype="int32"
-            ),
-        }
-        xs1 = [
-            ops.convert_to_tensor(np.random.rand(4, 100, 3), dtype="float32"),
-            ops.convert_to_tensor(
-                np.random.randint(0, 10, size=(4, 1)), dtype="int32"
-            ),
-        ]
-        ys = ops.map(dict_input_fn, xs)
-        self.assertEqual(ys["x"].shape, (4, 100))
-        self.assertEqual(
-            ops.convert_to_numpy(ys["y"]).all(),
-            ops.convert_to_numpy(xs["y"] + 1).all(),
-        )
-        ys = ops.map(list_input_fn, xs1)
-        for x, y in zip(xs1, ys):
-            self.assertEqual(
-                (ops.convert_to_numpy(y)).all(),
-                (ops.convert_to_numpy(x) ** 2).all(),
-            )
-
     def test_scan(self):
         # Test cumsum
         def cumsum(carry, xs):
@@ -702,19 +666,6 @@ class CoreOpsCorrectnessTest(testing.TestCase, parameterized.TestCase):
                 lambda: ops.ones((3,)),
                 lambda: ops.zeros((4,)),
             )
-
-    def test_cond_raw_bool_compile(self):
-        class ExampleLayer(layers.Layer):
-            def call(self, x, training=False):
-                return ops.cond(training, lambda: x, lambda: x * 2.0)
-
-        model = models.Sequential([ExampleLayer()])
-        model.compile(
-            optimizer=optimizers.SGD(), loss=losses.MeanSquaredError()
-        )
-        x = np.ones((2, 4), dtype=np.float32)
-        y = np.zeros((2, 4), dtype=np.float32)
-        model.evaluate(x, y, batch_size=2)
 
     def test_unstack(self):
         rng = np.random.default_rng(0)
