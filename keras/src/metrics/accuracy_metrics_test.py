@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 
 from keras.src import testing
@@ -171,6 +173,18 @@ class BinaryAccuracyTest(testing.TestCase):
         # Higher threshold must result in lower measured accuracy.
         self.assertAllClose(result_1, 1.0)
         self.assertAllClose(result_2, 0.75)
+
+    def test_invalid_threshold(self):
+        self.assertRaisesRegex(
+            ValueError,
+            re.compile(r"Invalid value for argument `threshold`"),
+            lambda: accuracy_metrics.BinaryAccuracy(threshold=-0.5),
+        )
+        self.assertRaisesRegex(
+            ValueError,
+            re.compile(r"Invalid value for argument `threshold`"),
+            lambda: accuracy_metrics.BinaryAccuracy(threshold=1.5),
+        )
 
 
 class CategoricalAccuracyTest(testing.TestCase):
